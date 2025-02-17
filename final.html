@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<head>
+<title>Final Project</title>
+<script src="https://csc-vu.github.io/lib/three.js"></script>
+<script src="https://csc-vu.github.io/lib/OrbitControls.js"></script>
+<script src="https://csc-vu.github.io/lib/KeyboardState.js"></script>
+<!-- track texture: https://static.vecteezy.com/system/resources/previews/014/340/378/non_2x/race-track-icon-cartoon-circuit-road-vector.jpg -->
+<!-- question mark texture: https://media.istockphoto.com/id/1162198273/vector/question-mark-icon-flat-vector-illustration-design.jpg?s=612x612&w=0&k=20&c=MJbd8bw2iewJRd8sEkHxyGMgY3__j9MKA8cXvIvLT9E= -->
+
+
+<script>
+    var scene, camera, renderer; // Three.js rendering basics
+    var canvas; // The canvas on which the image is rendered
+    var mouse;
+    var texLoader;
+    var keyboard = new KeyboardState();
+    var clock = new THREE.Clock();
+    var rain, rainGeo, rainCount = 15000;
+
+    var startTime = clock.getElapsedTime();
+
+    var eyeLight;
+
+    var mario;
+    var luigi;
+    var mysteryBox;
+
+    var marioBoard, marioMan, marioWheelLeft,marioWheelRight, marioRightArm, marioLeftArm, marioTorso, marioHead;
+    var luigiBoard, luigiMan, luigiWheelLeft, luigiWheelRight, luigiRightArm, luigiLeftArm, luigiTorso, luigiHead;
+
+    var keyframes = [
+    [0/21, -2.8000000000000025, 0, 15.69999999999996, Math.PI/2, 
+     -3, 0, 22.700000000000053, Math.PI/2, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [1/21, 17.399999999999977, 0, 15.099999999999962, Math.PI/2, 18.199999999999992, 0,
+    20.40000000000002, Math.PI/2, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [2/21, 37.900000000000183, 0, -0.8000000000000006, Math.PI, 38.00000000000027, 0,
+    0.19999999999999987, Math.PI, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [3/21, 21.500000000000036, 0, -15.299999999999963, 3*Math.PI/2, 25.800000000000097, 0,
+    -19.900000000000013, 3*Math.PI/2, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [4/21, -7.399999999999991, 0, -15.299999999999963, 3*Math.PI/2, -0.2, 0,
+    -22.60000000000005, 3*Math.PI/2, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+    [4.01/21, -7.399999999999991, 0, -15.299999999999963, 3*Math.PI/2, -0.2, 0,
+    -22.60000000000005, 3*Math.PI/2, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [5/21, -29.800000000000157, 0, -18.29999999999999, 2*Math.PI, -38.00000000000027, 0,
+    -4.300000000000001, 2*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [6/21, -32.9000000000002, 0, 5.399999999999998, 2.5*Math.PI, -23.90000000000007, 0,
+    19.700000000000014, 2*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+    [6.01/21, -32.9000000000002, 0, 5.399999999999998, 2.5*Math.PI, -23.90000000000007, 0,
+    19.700000000000014, 2.5*Math.PI, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [7/21, -21.70000000000004, 0, 14.099999999999968, 2.5*Math.PI, 6.899999999999992, 0,
+    19.700000000000014, 2.5*Math.PI, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [8/21, 26.700000000000113, 0, 18.399999999999995, 2.5*Math.PI, 36.10000000000024, 0,
+    5.300000000000001, 3*Math.PI, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [9/21, 36.50000000000025, 0, -3.8999999999999995, 3*Math.PI, 21.70000000000004, 0,
+    -16.399999999999963, 3.5*Math.PI, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [10/21, 15.79999999999996, 0, -22.50000000000005, 3.5*Math.PI, 0.09999999999999931, 0,
+    -23.10000000000006, 3.5*Math.PI, -22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+    [10.01/21, 15.79999999999996, 0, -22.50000000000005, 3.5*Math.PI, 0.09999999999999931, 0,
+    -23.10000000000006, 3.5*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [11/21, 15.79999999999996, 0, -22.50000000000005, 15.5*Math.PI, -32.9000000000002, 0,
+    -13.899999999999967, 4*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [12/21, -22.30000000000005, 0, -23.100000000000062, 15.5*Math.PI, -35.90000000000024, 0,
+    9.099999999999984, 4*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+    [12.01/21, -22.30000000000005, 0, -23.100000000000062, 15.5*Math.PI, -35.90000000000024, 0,
+    9.099999999999984, 4*Math.PI, 22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [13/21, -36.300000000000246, 0, 2.900000000000001, 16*Math.PI, 12.599999999999973, 0,
+    14.499999999999964, 4.5*Math.PI, 22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [14/21, 6.38378239159465e-16, 0, 21.80000000000004, 16.5*Math.PI, 38.60000000000028, 0,
+    0.7999999999999993, 5*Math.PI, 22.6, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+    [14.01/21, 6.38378239159465e-16, 0, 21.80000000000004, 16.5*Math.PI, 38.60000000000028, 0,
+    0.7999999999999993, 5*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [15/21, 35.00000000000023, 3, 5.299999999999997, 17*Math.PI, 22.700000000000053, 0,
+    -18.199999999999992, 5.5*Math.PI, -800, -Math.PI/2, Math.PI/2, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [16/21, -21.900000000000045, 3, -15.099999999999966, 17.5*Math.PI, -4.400000000000001, 0,
+    -18.199999999999992, 5.5*Math.PI, -800, -Math.PI/2, Math.PI/2, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [17/21, -31.300000000000175, 3, 12.899999999999968, 18.5*Math.PI, -36.70000000000025, 0,
+    -6.699999999999996, 6*Math.PI, -800, -Math.PI/2, Math.PI/2, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [18/21, 0.30000000000000066, 0, 21.20000000000003, 18.5*Math.PI, -23.10000000000006, 0,
+    21.500000000000036, 6.5*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [19/21, 19.600000000000012, 0, 21.70000000000004, 18.5*Math.PI, -1.6999999999999997, 0,
+    20.50000000000002, 6.5*Math.PI, -800, -2*Math.PI/3, 2*Math.PI/3, -2*Math.PI/3, 2*Math.PI/3, 0],
+
+    [20/21, 19.600000000000012, 0, 21.70000000000004, 18.5*Math.PI, 19.40000000000001, 0,
+    18.39999999999999, 6.5*Math.PI, -22.6, -1*Math.PI/6, 1*Math.PI/6, -5*Math.PI/6, 5*Math.PI/6, Math.PI/4],
+
+    [21/21, 19.600000000000012, 0, 21.70000000000004, 18.5*Math.PI, 19.40000000000001, 0,
+    18.39999999999999, 6.5*Math.PI, -22.6, -1*Math.PI/6, 1*Math.PI/6, -5*Math.PI/6, 5*Math.PI/6, Math.PI/4],
+    ]
+
+    var camframes = [
+        [0, 0, 20, 0],
+        [5/21, 0, 50, -100],
+        [11/21, 0, 50, -100],
+        [14/21, 0, 6, 30],
+        [1, 25, 5, 0],
+    ]
+
+    function keyframeInterp(keyframes, cycleTime, animTime) {
+
+        var keys=[];  // array of interpolated values
+        var nKeys = keyframes[0].length-1;  // number of keys
+
+        // find time elapsed within the current cycle and scale to [0,1]
+        var time = (animTime % cycleTime) / cycleTime; 
+
+        // find the next keyframe based on time
+        for (var i = 0; i < keyframes.length; i++) {
+            if (time < keyframes[i][0]) break;
+        }
+        i = i-1; // previous keyframe is at index i-1
+
+        // scale interpolation parameter t to interval [0,1]
+        var t = (time - keyframes[i][0]) / (keyframes[i+1][0] - keyframes[i][0]); 
+
+        // linear interpolation between keyframes i and i+1 
+        for(var j = 1; j <= nKeys; j++)
+        {
+            keys.push((1-t) * keyframes[i][j] + t * keyframes[i+1][j]); 
+        }
+
+        return keys;
+    }
+
+    // Create a camera, sitting on the positive z-axis.  The camera is not part of the scene
+    function createCamera() {
+        camera = new THREE.PerspectiveCamera(40, canvas.width/canvas.height, 0.1, 500);
+        camera.position.set(0,50,-100); // change parameters as needed
+
+        mouse = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+
+   // add lights to the scene
+    function createLights()
+    {
+ 
+        // TODO Step 6: add a dim light shining from above
+        var topLight = new THREE.DirectionalLight( "lightyellow", 0.6 ); 
+        topLight.position.set(0, 50, 0);
+        scene.add( topLight );
+    }
+
+    function makeRain() {
+        rainGeo = new THREE.Geometry();
+        for (let i = 0; i<rainCount;i++){
+            rainDrop = new THREE.Vector3(
+                Math.random()*400-200,
+                Math.random() * 500 -250,
+                Math.random()*400-200,
+            );
+            rainDrop.velocity = {};
+            rainDrop.velocity = 0;
+            rainGeo.vertices.push(rainDrop);
+        }
+        rainMaterial = new THREE.PointsMaterial({color:0xaaaaaa, size: 0.1, transparent: true});
+        rain = new THREE.Points(rainGeo, rainMaterial);
+
+        return rain;
+
+    }
+
+    function createGround() {
+        // arguments are width along the x-axis, then width along y-axis
+        var geometry = new THREE.PlaneGeometry( 100, 100 );  // plane is 100 x 100 pixels  
+        var raceTex = texLoader.load("race-track.jpg");
+        var material = new THREE.MeshPhongMaterial({map: raceTex, side: THREE.DoubleSide, color: "grey"});
+        var plane = new THREE.Mesh( geometry, material );
+        // TODO: rotate the plane so that it lies horizontal
+        plane.rotation.x = Math.PI/2;
+        // TODO: return the plane
+        return plane;
+    }
+
+    function createAudience() {
+        // arguments are width along the x-axis, then width along y-axis
+        var geometry = new THREE.PlaneGeometry( 100, 100 );  // plane is 100 x 100 pixels  
+        var audienceTex = texLoader.load("download.jpg");
+        audienceTex.wrapS = THREE.RepeatWrapping;
+        audienceTex.wrapT = THREE.RepeatWrapping;
+        audienceTex.repeat.set( 6, 3 );
+
+        var material = new THREE.MeshPhongMaterial({map: audienceTex, side: THREE.DoubleSide});
+        var plane = new THREE.Mesh( geometry, material );
+        // TODO: rotate the plane so that it lies horizontal
+        // plane.rotation.x = Math.PI/2;
+        // TODO: return the plane
+
+        plane.position.z += 50;
+        plane.position.y += 50;
+       // plane.rotation.z = Math.PI;
+
+        return plane;
+    }
+
+    function createBox(length, height, width, boxColor) {
+        var geometry = new THREE.BoxGeometry(length, height, width);
+        var material = new THREE.MeshPhongMaterial( {color: boxColor} );
+
+        var mesh = new THREE.Mesh(geometry, material);
+
+        var box = new THREE.Object3D();
+        box.add(mesh);
+        mesh.position.y = height/2;
+
+        return box;
+    }
+
+    function createWheel(radius) {
+        var geometry = new THREE.TorusGeometry(radius, radius/4, 16, 32);
+        var material = new THREE.MeshPhongMaterial({color: "black"});
+
+        var mesh = new THREE.Mesh(geometry, material);
+
+        var wheel = new THREE.Object3D();
+        wheel.add(mesh);
+        mesh.rotation.y = Math.PI/2;
+
+        return wheel;
+    }
+
+    function createHead(radius, height) {
+        var geometry = new THREE.SphereGeometry(radius, 32, 16);
+        var material = new THREE.MeshPhongMaterial( {color: "yellow"});
+        var mesh = new THREE.Mesh(geometry, material);
+
+        var head = new THREE.Object3D();
+        head.add(mesh);
+        mesh.scale.y = height/radius;
+        mesh.position.y = height/2;
+
+        return head;
+    }
+
+    function createHeadband(radius, hatColor){
+        var geometry = new THREE.SphereGeometry(radius, 32, 16);
+        var material = new THREE.MeshPhongMaterial( {color: hatColor});
+        var mesh = new THREE.Mesh(geometry, material);
+
+        var band = new THREE.Object3D();
+        band.add(mesh);
+        mesh.scale.y = 0.5;
+        mesh.position.y = -0.5;
+
+        return band;
+    }
+
+    function createMario() {
+        var legLength = 6;
+        var armLength = 5;
+        var limbWidth = 1.5;
+        var torsoLength = 3;
+        var torsoWidth = 2;
+        var torsoHeight = 6;
+        var headRadius = 3;
+        var headHeight = 3;
+        var headbandColor = "red";
+
+        var torso = createBox(torsoLength, torsoHeight, torsoWidth, "red");
+        var leftLeg = createBox(limbWidth, legLength, limbWidth, "red");
+        var rightLeg = createBox(limbWidth, legLength, limbWidth, "red");
+        var rightArm = createBox(limbWidth, armLength, limbWidth, "yellow");
+        var leftArm = createBox(limbWidth, armLength, limbWidth, "yellow");
+        var head = createHead(headRadius, headHeight);
+        var headband = createHeadband(headRadius - 0.1, headbandColor);
+
+        var guy = new THREE.Object3D();
+        guy.add(torso);
+
+        torso.add(leftLeg);
+        torso.add(rightLeg);
+        torso.add(leftArm);
+        torso.add(rightArm);
+        torso.add(head);
+        head.add(headband);
+
+        leftLeg.position.x = -torsoLength/2;
+        leftLeg.rotation.z = Math.PI;
+
+        rightLeg.position.x = torsoLength/2;
+        rightLeg.rotation.z = Math.PI;
+
+        leftArm.position.y = torsoHeight;
+        leftArm.position.x = -torsoLength/2;
+        leftArm.rotation.z = 2*Math.PI/3;
+
+        rightArm.position.y = torsoHeight;
+        rightArm.position.x = torsoLength/2;
+        rightArm.rotation.z = -2*Math.PI/3;
+
+        head.position.y = torsoHeight + headHeight/2;
+        headband.position.y = headHeight;
+
+        torso.position.y = legLength;
+
+        return guy;
+    }
+
+    function createLuigi() {
+        var legLength = 7;
+        var armLength = 6;
+        var limbWidth = 1.5;
+        var torsoLength = 3;
+        var torsoWidth = 2;
+        var torsoHeight = 6;
+        var headRadius = 3;
+        var headHeight = 4;
+        var headbandColor = "green";
+
+        var torso = createBox(torsoLength, torsoHeight, torsoWidth, "green");
+        var leftLeg = createBox(limbWidth, legLength, limbWidth, "green");
+        var rightLeg = createBox(limbWidth, legLength, limbWidth, "green");
+        var rightArm = createBox(limbWidth, armLength, limbWidth, "yellow");
+        var leftArm = createBox(limbWidth, armLength, limbWidth, "yellow");
+        var head = createHead(headRadius, headHeight);
+        var headband = createHeadband(headRadius - 0.1, headbandColor);
+
+        var guy = new THREE.Object3D();
+        guy.add(torso);
+
+        torso.add(leftLeg);
+        torso.add(rightLeg);
+        torso.add(leftArm);
+        torso.add(rightArm);
+        torso.add(head);
+        head.add(headband);
+
+        leftLeg.position.x = -torsoLength/2;
+        leftLeg.rotation.z = Math.PI;
+
+        rightLeg.position.x = torsoLength/2;
+        rightLeg.rotation.z = Math.PI;
+
+        leftArm.position.y = torsoHeight;
+        leftArm.position.x = -torsoLength/2;
+        leftArm.rotation.z = 2*Math.PI/3;
+
+        rightArm.position.y = torsoHeight;
+        rightArm.position.x = torsoLength/2;
+        rightArm.rotation.z = -2*Math.PI/3;
+
+        head.position.y = torsoHeight + headHeight/2;
+        headband.position.y = headHeight;
+
+        torso.position.y = legLength;
+
+        return guy;
+    }
+
+    function createHoverBoardMario() {
+
+        var boardLength = 6;
+        var boardWidth = 2;
+        var boardHeight = 1;
+        var wheelRadius = 1.5;
+
+        var board = createBox(boardLength, boardHeight, boardWidth, "grey");
+        var leftWheel = createWheel(wheelRadius);
+        var rightWheel = createWheel(wheelRadius);
+        var guy = createMario();
+
+        var whole = new THREE.Object3D();
+        whole.add(board);
+        board.add(leftWheel);
+        board.add(rightWheel);
+        board.add(guy);
+
+        board.position.y = wheelRadius + wheelRadius/4;
+        leftWheel.position.x = boardLength/2;
+        rightWheel.position.x = -boardLength/2;
+        guy.position.y = boardHeight;
+
+        return whole;
+    }
+
+    function createHoverBoardLuigi() {
+
+        var boardLength = 6;
+        var boardWidth = 2;
+        var boardHeight = 1;
+        var wheelRadius = 1.5;
+
+        var board = createBox(boardLength, boardHeight, boardWidth, "grey");
+        var leftWheel = createWheel(wheelRadius);
+        var rightWheel = createWheel(wheelRadius);
+        var guy = createLuigi();
+
+        var whole = new THREE.Object3D();
+        whole.add(board);
+        board.add(leftWheel);
+        board.add(rightWheel);
+        board.add(guy);
+
+        board.position.y = wheelRadius + wheelRadius/4;
+        leftWheel.position.x = boardLength/2;
+        rightWheel.position.x = -boardLength/2;
+        guy.position.y = boardHeight;
+
+        return whole;
+    }
+
+    function makeMysteryBox() {
+
+        var geometry = new THREE.BoxGeometry(1, 1, 1);
+        var qTex = texLoader.load("question-mark.jpg");
+
+        var material = new THREE.MeshBasicMaterial( {map: qTex, color: "lightblue"} );
+
+        var mesh = new THREE.Mesh(geometry, material);
+
+        var box = new THREE.Object3D();
+        box.add(mesh);
+        mesh.position.y = 1.5;
+        mesh.rotation.x = Math.PI;
+
+        return box;
+    }
+ 
+    // Create the scene. This function is called once, as soon as the page loads.
+    // The renderer has already been created before this function is called.
+    function createScene() {
+
+        renderer.setClearColor("gray"); // Set background color (0, or 0x000000, is black)
+        scene = new THREE.Scene(); // Create a new scene which we can add objects to
+
+        eyeLight = new THREE.PointLight("white", 0.8); 
+        eyeLight.castShadow = true;
+
+        scene.add(camera);
+        camera.add(eyeLight);
+
+        rain = makeRain();
+        scene.add(rain);
+
+        texLoader = new THREE.TextureLoader();
+
+        var ground = createGround();
+        scene.add(ground);
+
+        var audience = createAudience();
+        scene.add(audience);
+
+        mario = createHoverBoardMario();
+        scene.add(mario);
+        mario.scale.set(0.1, 0.1, 0.1);
+        mario.position.x = 3;
+
+        luigi = createHoverBoardLuigi();
+        scene.add(luigi);
+        luigi.scale.set(0.1, 0.1, 0.1);
+        luigi.position.x = -3;
+
+        marioBoard = mario.children[0];
+        marioWheelLeft = marioBoard.children[1];
+        marioWheelRight = marioBoard.children[2];
+        marioMan = marioBoard.children[3];
+        marioTorso = marioMan.children[0];
+        marioLeftArm = marioTorso.children[3];
+        marioRightArm = marioTorso.children[4];
+        marioHead = marioTorso.children[5];
+
+        luigiBoard = luigi.children[0];
+        luigiWheelLeft = luigiBoard.children[1];
+        luigiWheelRight = luigiBoard.children[2];
+        luigiMan = luigiBoard.children[3];
+        luigiTorso = luigiMan.children[0];
+        luigiLeftArm = luigiTorso.children[3];
+        luigiRightArm = luigiTorso.children[4];
+        luigiHead = luigiTorso.children[5];
+
+        mysteryBox = makeMysteryBox();
+        scene.add(mysteryBox);
+    }
+
+    function update() {
+        mouse.update();
+
+        keyboard.update();
+
+        camera.lookAt(mario.position.x,mario.position.y,mario.position.z);
+        // eyeLight.position.set(camera.position.x, camera.position.y, camera.position.z );
+        // eyeLight.target.position.set(mario.position.x,mario.position.y,mario.position.z); 
+
+        if (keyboard.pressed("left"))
+        {
+            mario.position.x -= 0.1;
+        }
+        if (keyboard.pressed("right"))
+        {
+            mario.position.x += 0.1;
+        }
+        if (keyboard.pressed("up"))
+        {
+            mario.position.z += 0.1;
+        }
+        if (keyboard.pressed("down"))
+        {
+            mario.position.z -= 0.1;
+        }
+
+        if (keyboard.pressed("A"))
+        {
+            luigi.position.x -= 0.1;
+        }
+        if (keyboard.pressed("D"))
+        {
+            luigi.position.x += 0.1;
+        }
+        if (keyboard.pressed("W"))
+        {
+            luigi.position.z += 0.1;
+        }
+        if (keyboard.pressed("S"))
+        {
+            luigi.position.z -= 0.1;
+        }
+
+        if (keyboard.down("P"))//marioxyz yrot, luigixyz yrot, mystery box z, mArmR zrot lzrot, LArmR zrot lzrot, lTorso
+        {
+            console.log("[x/21, " + mario.position.x + ", " + mario.position.y + ", " + mario.position.z + 
+            ", Math.PI/x, " + luigi.position.x + ", " + luigi.position.y +
+             ",\n" + luigi.position.z + ", Math.PI/x, -22.6, 2*Math.PI/3, 2*Math.PI/3, 2*Math.PI/3, 2*Math.PI/3, 0],")
+
+        }
+
+    }
+
+    // Render the scene. This is called for each frame of the animation.
+    function render() {
+        requestAnimationFrame( render );
+
+        var keys = keyframeInterp(keyframes, 30, clock.getElapsedTime()-startTime);
+        mario.position.x = keys[0];
+        mario.position.y = keys[1];
+        mario.position.z = keys[2];
+        mario.rotation.y = keys[3];
+
+        luigi.position.x = keys[4];
+        luigi.position.y = keys[5];
+        luigi.position.z = keys[6];
+        luigi.rotation.y = keys[7];
+
+        mysteryBox.position.z = keys[8];
+        
+        marioRightArm.rotation.z = keys[9];
+        marioLeftArm.rotation.z = keys[10];
+
+        luigiRightArm.rotation.z = keys[11];
+        luigiLeftArm.rotation.z = keys[12];
+        luigiHead.rotation.x = keys[13];
+
+        var cam = keyframeInterp(camframes, 30, clock.getElapsedTime()-startTime);
+        camera.position.x = cam[0];
+        camera.position.y = cam[1];
+        camera.position.z = cam[2];
+
+        rainGeo.vertices.forEach(p => {
+            p.velocity -= 0.1 + Math.random()*0.1;
+            p.y += p.velocity;
+            if (p.y<-200){
+                p.y = 200;
+                p.velocity =0;
+            }
+        });
+        rainGeo.verticesNeedUpdate = true;
+
+        // code for things to change here
+        update();
+
+        renderer.render(scene, camera);
+    }
+
+ //----------------------------------------------------------------------------------
+
+    // reset canvas size and camera aspect ratio on window resize
+    function onWindowResize() {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+    }
+    
+    // The init() function is called by the onload event when the document has loaded.
+    function main() {
+        try {
+            canvas = document.getElementById("glcanvas");
+            renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true} );
+            // set full screen
+            renderer.setSize(window.innerWidth, window.innerHeight); 
+            // adjust on window resize
+            window.addEventListener('resize', onWindowResize);  
+        }
+        catch (e) {
+            document.getElementById("canvas-holder").innerHTML = "<h3><b>WebGL is not available.</b><h3>";
+            return;
+        }
+    
+        // create camera
+        createCamera();
+        
+        // create scene 
+        createScene();
+
+        // create lights 
+        createLights();
+
+        // render scene
+        render();
+    }
+
+</script>
+
+</head>
+<body onload="main()">
+<div id="canvas-holder">
+    <canvas id="glcanvas" width="400" height="200"></canvas>
+</div>
+</body>
+</html>
