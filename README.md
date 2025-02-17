@@ -1,5 +1,1 @@
-# final project
-
-Create a short movie.
-
-Instructions for completing the final project are posted [here](https://csc-vu.github.io/classes/csc4300/hw/final/final-instr.html). 
+Visit [here](https://srken32.github.io/THREE.Js-Racing-Animation/final.html) to see the animation.
